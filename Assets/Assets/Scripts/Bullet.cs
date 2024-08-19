@@ -3,12 +3,26 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    float speed = 3;
+    float speed;
     Vector3 direction;
+    private BulletPool bulletPool; // Referenciamos al BulletPool
+    
 
-    public void setDirection(Vector3 dir)
+    private void Start()
     {
+        bulletPool = FindObjectOfType<BulletPool>();
+    }
+
+    //Relacionado con el punto 15 del documento de correcciones
+    public void SetDirection(Vector3 dir)
+    {
+        //Se inicializa la velocidad en Start para que no se acumule la velocidad en la bala
+        //Relacionado con el punto 13 del documento de correcciones
+        speed = 3f;
         direction = dir;
+        //Relacionado con el punto 13 del documento de correcciones
+        // Devuelve la bala al pool después de cierto tiempo para que no se acumulen.
+        Invoke("ReturnToPool", 3f);
     }
 
     void FixedUpdate()
@@ -19,10 +33,25 @@ public class Bullet : MonoBehaviour
         Collider[] targets = Physics.OverlapSphere(transform.position, 1);
         foreach (var item in targets)
         {
-            if (item.tag == "Enemy")
+            // Se cambia item.tag por Compare.tag porque es más eficiente
+            //Relacionado con el punto 14 del documento de correcciones
+            if (item.CompareTag("Enemy"))
             {
-
+                //Se destruye al enemigo al colisionar
+                //Relacionado con el punto 16 del documento de correcciones
+                Destroy(item.gameObject);
+                //Una vez destruye al enemigo, la bala vuelve a la piscina
+                //Relacionado con el punto 13 del documento de correcciones
+                bulletPool.ReturnBullet(gameObject);
+                return;
             }
         }
     }
+    //Funciión que devuelve las balas a la piscina
+    //Relacionado con el punto 13 del documento de correcciones
+    void ReturnToPool()
+    {
+        bulletPool.ReturnBullet(gameObject); 
+    }
+
 }

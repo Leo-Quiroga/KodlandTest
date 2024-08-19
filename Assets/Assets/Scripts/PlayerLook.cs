@@ -1,43 +1,55 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerLook : MonoBehaviour
 {
-    [SerializeField] float mouseSense;
+    // Ajusto sensibilidad de mouse para que no sea 0.
+    // Punto 7 del documento de correcciones.
+    [SerializeField] float mouseSense = 150f; 
     [SerializeField] Transform player, playerArms;
 
     float xAxisClamp = 0;
 
-    // Update is called once per frame
-    void Update()
+     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        // Mover al start para que se ejecute una sóla vez.
+        // Punto 8 del documento de correcciones.
+        Cursor.lockState = CursorLockMode.Locked; 
+    }
 
-        float rotateX = Input.GetAxis("Mouse X") * mouseSense;
-        float rotateY = Input.GetAxis("Mouse Y") * mouseSense;
+    // Cambio de Update a LateUpdate.
+    // Punto 4 del documento de correcciones.
+    void LateUpdate()
+    {
+        MoveCamera();
+    }
 
-        xAxisClamp -= rotateX;
+    // Sacar el controlador de la cámara a la función.
+    // Punto 9 del documento de correcciones.
+    void MoveCamera()
+    {
+        // Suavizar el movimiento con Time.deltaTime
+        // Punto 3 del documento de correcciones.
+        float rotateX = Input.GetAxis("Mouse X") * mouseSense * Time.deltaTime; 
+        float rotateY = Input.GetAxis("Mouse Y") * mouseSense * Time.deltaTime;
 
-        Vector3 rotPlayerArms = playerArms.rotation.eulerAngles;
-        Vector3 rotPlayer = player.rotation.eulerAngles;
+        // Acumular xAxisClamp con rotateY en lugar de rotateX la cual guarda el movimiento horizontal y no el vertical que se necesita.
+        // Punto 2 de documento de correcciones.
+        xAxisClamp += rotateY;
 
-        rotPlayerArms.x -= rotateY;
-        rotPlayerArms.z = 0;
-        rotPlayer.y += rotateX;
+        // Limitar la rotación en el eje X (rotación vertical)
+        // Punto 6 del documento de correcciones
+        xAxisClamp = Mathf.Clamp(xAxisClamp, -90f, 90f);
 
-        if (xAxisClamp > 90)
-        {
-            xAxisClamp = 90;
-            rotPlayerArms.x = 90;
-        }
-        else if (xAxisClamp < -90)
-        {
-            xAxisClamp = -90;
-            rotPlayerArms.x = 270;
-        }
+        // Rotar los brazos del Player en el eje X (rotación vertical)
+        // Cambio de rotation.eulerAngles a Quaternion.Euler, punto 5 del documento de correcciones.
+        Quaternion targetRotation = Quaternion.Euler(-xAxisClamp, 0f, 0f);
+        playerArms.localRotation = targetRotation;
 
-        playerArms.rotation = Quaternion.Euler(rotPlayerArms);
-        player.rotation = Quaternion.Euler(rotPlayer);
+        // Rotar al jugador en el eje Y (rotación horizontal) de una forma más simplificada con una sóla línea de código
+        player.Rotate(Vector3.up * rotateX);
     }
 }
+
